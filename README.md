@@ -20,6 +20,7 @@ B1 B2 B3 B4
 D1 D2
 ```
 
+and have the following routes as available routes
 ```
 S1, S2 -> A1, A2, A3 -> B1, B2 -> D1 -> END
 S1, S2 -> A4 -> B1, B2 -> D2 -> END
@@ -28,3 +29,4 @@ S3, S4 -> A1, A2, A3 -> B3, B4 -> END
 S3, S4 -> A4 -> B1, B2 -> END
 S3, S4 -> A4 -> B3, B4 -> D1 -> END
 S3, S4 -> D2 -> END
+```
