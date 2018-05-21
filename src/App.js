@@ -18,6 +18,12 @@ const { Provider, Consumer } = React.createContext();
 
 // First items of an array of arrays.
 const getFirsts = arr => arr.map(i => i[0]);
+// Get the item before last item in an array
+const getUpUntilLast = arr => arr.slice(0, arr.length - 2);
+// Get the last item
+const getLast = arr => arr[arr.length - 1];
+// Get safe array
+const getSafeArray = (arr, fallback) => (arr.length && arr) || [fallback]
 // Create an array with unique elements from an array
 const uniq = arr => arr.filter((v,i,a) => a.indexOf(v) === i)
 
@@ -52,7 +58,7 @@ class RelationalFSMEngine extends Component {
 
     nextActiveRoutes = activeRoutes.filter(routes => routes.includes(category));
 
-    nextActiveRoutesHistory = activeRoutesHistory.concat([nextActiveRoutes]);
+    nextActiveRoutesHistory = activeRoutesHistory.concat([activeRoutes]);
 
     nextVisibleNodes = nextActiveRoutes.map(routes => {
       const index = routes.indexOf(category);
@@ -61,7 +67,7 @@ class RelationalFSMEngine extends Component {
       return nextItem;
     });
 
-    nextVisibleNodesHistory = visibleNodesHistory.concat([nextVisibleNodes]);
+    nextVisibleNodesHistory = visibleNodesHistory.concat([visibleNodes]);
 
     this.setState({
       visibleNodes: nextVisibleNodes,
@@ -77,19 +83,19 @@ class RelationalFSMEngine extends Component {
       visibleNodesHistory
     } = this.state;
 
-    if (activeRoutesHistory.length === 1 || visibleNodesHistory === 1) {
+    if (activeRoutesHistory.length === 0 || visibleNodesHistory === 0) {
       return null;
     }
 
-    const newActiveRoutesHistory = activeRoutesHistory.slice(0, activeRoutesHistory.length - 2);
-    const newVisibleNodesHistory = visibleNodesHistory.slice(0, visibleNodesHistory.length - 2);
+    const newActiveRoutesHistory = getUpUntilLast(activeRoutesHistory);
+    const newVisibleNodesHistory = getUpUntilLast(visibleNodesHistory);
 
     this.setState({
       ...this.state,
-      activeRoutes: activeRoutesHistory[activeRoutesHistory.length - 2],
-      activeRoutesHistory: (newActiveRoutesHistory.length && newActiveRoutesHistory) || [routes],
-      visibleNodes: visibleNodesHistory[visibleNodesHistory.length - 2],
-      visibleNodesHistory: (newVisibleNodesHistory.length && newVisibleNodesHistory) || [uniq(getFirsts(routes))]
+      activeRoutes: getLast(activeRoutesHistory),
+      activeRoutesHistory: getSafeArray(newActiveRoutesHistory, routes),
+      visibleNodes: getLast(visibleNodesHistory),
+      visibleNodesHistory: getSafeArray(newVisibleNodesHistory, uniq(getFirsts(routes)))
     });
   }
 
