@@ -18,6 +18,12 @@ const { Provider, Consumer } = React.createContext();
 
 // First items of an array of arrays.
 const getFirsts = arr => arr.map(i => i[0]);
+// Get the item before last item in an array
+const getUpUntilLast = arr => arr.slice(0, arr.length - 2);
+// Get the last item
+const getLast = arr => arr[arr.length - 1];
+// Get safe array
+const getSafeArray = (arr, fallback) => (arr.length && arr) || [fallback]
 // Create an array with unique elements from an array
 const uniq = arr => arr.filter((v,i,a) => a.indexOf(v) === i)
 
@@ -29,7 +35,9 @@ class RelationalFSMEngine extends Component {
 
     this.state = {
       visibleNodes: uniq(getFirsts(routes)),
-      activeRoutes: routes
+      activeRoutes: routes,
+      visibleNodesHistory: [uniq(getFirsts(routes))],
+      activeRoutesHistory: [routes]
     };
 
     $changeCategory = this.changeCategory = this.changeCategory.bind(this);
@@ -38,13 +46,19 @@ class RelationalFSMEngine extends Component {
   changeCategory(category) {
     const {
       visibleNodes,
-      activeRoutes
+      activeRoutes,
+      visibleNodesHistory,
+      activeRoutesHistory
     } = this.state;
 
     let nextActiveRoutes;
     let nextVisibleNodes;
+    let nextActiveRoutesHistory = [];
+    let nextVisibleNodesHistory = [];
 
     nextActiveRoutes = activeRoutes.filter(routes => routes.includes(category));
+
+    nextActiveRoutesHistory = activeRoutesHistory.concat([activeRoutes]);
 
     nextVisibleNodes = nextActiveRoutes.map(routes => {
       const index = routes.indexOf(category);
@@ -53,9 +67,35 @@ class RelationalFSMEngine extends Component {
       return nextItem;
     });
 
+    nextVisibleNodesHistory = visibleNodesHistory.concat([visibleNodes]);
+
     this.setState({
       visibleNodes: nextVisibleNodes,
-      activeRoutes: nextActiveRoutes
+      activeRoutes: nextActiveRoutes,
+      activeRoutesHistory: nextActiveRoutesHistory,
+      visibleNodesHistory: nextVisibleNodesHistory
+    });
+  }
+
+  goBack() {
+    const {
+      activeRoutesHistory,
+      visibleNodesHistory
+    } = this.state;
+
+    if (activeRoutesHistory.length === 0 || visibleNodesHistory === 0) {
+      return null;
+    }
+
+    const newActiveRoutesHistory = getUpUntilLast(activeRoutesHistory);
+    const newVisibleNodesHistory = getUpUntilLast(visibleNodesHistory);
+
+    this.setState({
+      ...this.state,
+      activeRoutes: getLast(activeRoutesHistory),
+      activeRoutesHistory: getSafeArray(newActiveRoutesHistory, routes),
+      visibleNodes: getLast(visibleNodesHistory),
+      visibleNodesHistory: getSafeArray(newVisibleNodesHistory, uniq(getFirsts(routes)))
     });
   }
 
@@ -64,9 +104,33 @@ class RelationalFSMEngine extends Component {
     const { visibleNodes } = this.state;
 
     return (
-      <Provider value={visibleNodes}>
-        {children}
-      </Provider>
+      <div>
+        { [1].map((route, index) =>
+          (
+            <div
+              style={{
+                border: '1px solid #333',
+                position: 'absolute',
+                right: '10px',
+                top: `${60*index}px`,
+                float: 'right',
+                width: '100px',
+                height: '20px',
+                cursor: 'pointer',
+                lineHeight: '20px',
+                margin: '20px',
+                backgroundColor: '#eaeaea'
+              }}
+              onClick={() => this.goBack()}
+            >
+              Go Back
+            </div>)
+          )
+        }
+        <Provider value={visibleNodes}>
+          {children}
+        </Provider>
+      </div>
     );
   }
 }
